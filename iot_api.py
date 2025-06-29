@@ -1,22 +1,36 @@
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
-ultimo_comando = None  # Variable global (sin base de datos)
 
-@app.route("/enviar-comando", methods=["POST"])
-def enviar_comando():
-    global ultimo_comando
+# Estados de los 6 LEDs, por defecto todos apagados
+estado_leds = {
+    "led1": "apagar",
+    "led2": "apagar",
+    "led3": "apagar",
+    "led4": "apagar",
+    "led5": "apagar",
+    "led6": "apagar"
+}
+
+@app.route("/actualizar-led", methods=["POST"])
+def actualizar_led():
     data = request.get_json()
-    comando = data.get("comando")
-    if comando in ["encender", "apagar"]:
-        ultimo_comando = comando
-        return jsonify({"status": "ok", "comando": comando})
-    return jsonify({"status": "error", "mensaje": "Comando inválido"}), 400
+    led = data.get("led")    # led1, led2, ...
+    accion = data.get("accion")  # encender / apagar
+
+    if led in estado_leds and accion in ["encender", "apagar"]:
+        estado_leds[led] = accion
+        return jsonify({"status": "ok", "led": led, "accion": accion})
+    else:
+        return jsonify({"status": "error", "mensaje": "Entrada inválida"}), 400
 
 @app.route("/comando", methods=["GET"])
-def obtener_comando():
-    global ultimo_comando
-    return jsonify({"comando": ultimo_comando or "ninguno"})
+def obtener_comandos():
+    return jsonify(estado_leds)
+
+@app.route("/")
+def home():
+    return "API de control de LEDs (ESP32)"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
