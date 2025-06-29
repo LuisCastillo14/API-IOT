@@ -1,0 +1,11 @@
+# Ignorar entorno virtual
+venv/
+env/
+__pycache__/
+*.pyc
+venv_emo/
+
+
+# Archivos de sistema (opcional)
+.DS_Store
+*.log
