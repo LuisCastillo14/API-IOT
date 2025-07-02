@@ -10,7 +10,8 @@ CORS(app)
 # === Estados globales ===
 estado_leds = {f"led{i}": "apagar" for i in range(1, 7)}
 temporizadores = {f"led{i}": None for i in range(1, 7)}  # segundos
-horarios_programados = {f"led{i}": None for i in range(1, 7)}  # formato "HH:MM"
+horarios_programados = {f"led{i}": {"hora": None, "accion": None} for i in range(1, 7)}
+
 
 # === Endpoint para control inmediato ===
 @app.route("/actualizar-led", methods=["POST"])
@@ -40,17 +41,22 @@ def programar_led():
     data = request.get_json()
     led = data.get("led")
     hora = data.get("hora")
+    accion = data.get("accion")  # NUEVO
 
     if led not in horarios_programados:
         return jsonify({"status": "error", "mensaje": "LED inválido"}), 400
 
     try:
-        datetime.strptime(hora, "%H:%M")  # Validación del formato HH:MM
+        datetime.strptime(hora, "%H:%M")
     except ValueError:
         return jsonify({"status": "error", "mensaje": "Formato de hora inválido (use HH:MM)"}), 400
 
-    horarios_programados[led] = hora
-    return jsonify({"status": "ok", "led": led, "hora_programada": hora})
+    if accion not in ["encender", "apagar"]:
+        return jsonify({"status": "error", "mensaje": "Acción inválida"}), 400
+
+    horarios_programados[led] = {"hora": hora, "accion": accion}
+    return jsonify({"status": "ok", "led": led, "hora_programada": hora, "accion": accion})
+
 
 # === Endpoint que el ESP32 consulta cada 2 segundos ===
 @app.route("/comando", methods=["GET"])
@@ -60,23 +66,23 @@ def obtener_comandos():
         led_id = f"led{i}"
         salida[led_id] = estado_leds[led_id]
         salida[f"temporizador_{led_id}"] = temporizadores[led_id]
-        salida[f"hora_programada_{led_id}"] = horarios_programados[led_id]
+        prog = horarios_programados[led_id]
+        salida[f"hora_programada_{led_id}"] = prog["hora"] if prog else None
+        salida[f"accion_programada_{led_id}"] = prog["accion"] if prog else None
     return jsonify(salida)
 
 @app.route("/")
 def home():
     return "API de control de LEDs (ESP32 + Temporizador + Programación)"
 
-# === HILO que revisa programación cada 60 segundos ===
 def verificador_programacion():
     while True:
         ahora = datetime.now().strftime("%H:%M")
-        for led, hora in horarios_programados.items():
-            if hora == ahora:
-                if estado_leds[led] != "encender":
-                    estado_leds[led] = "encender"
-                    print(f"[AUTO] {led} encendido automáticamente por programación a las {hora}")
-        time.sleep(60)  # Espera un minuto para revisar otra vez
+        for led, info in horarios_programados.items():
+            if info["hora"] == ahora:
+                estado_leds[led] = info["accion"]
+                print(f"[AUTO] {led} {info['accion']} automáticamente a las {info['hora']}")
+        time.sleep(60)
 
 # === Iniciar hilo de fondo al arrancar la API ===
 if __name__ == "__main__":
