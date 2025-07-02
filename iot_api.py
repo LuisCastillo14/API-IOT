@@ -79,9 +79,7 @@ def obtener_comandos():
         salida[f"hora_programada_{led_id}"] = prog["hora"] if prog else None
         salida[f"accion_programada_{led_id}"] = prog["accion"] if prog else None
 
-    # AGREGAR ESTADO DEL SERVO
-    salida["servo"] = estado_servo
-
+    salida["servo"] = estado_servo  # ← AGREGA ESTO
     return jsonify(salida)
 
 @app.route("/")
