@@ -20,6 +20,7 @@ estado_leds = {f"led{i}": "apagar" for i in range(1, 7)}
 temporizadores = {f"led{i}": None for i in range(1, 7)}  # segundos
 horarios_programados = {f"led{i}": {"hora": None, "accion": None} for i in range(1, 7)}
 estado_servo = "cerrar"
+estado_servo2 = "cerrar"
 
 
 # === Endpoint para control inmediato ===
@@ -79,8 +80,10 @@ def obtener_comandos():
         salida[f"hora_programada_{led_id}"] = prog["hora"] if prog else None
         salida[f"accion_programada_{led_id}"] = prog["accion"] if prog else None
 
-    salida["servo"] = estado_servo  # ← AGREGA ESTO
+    salida["servo"] = estado_servo
+    salida["servo2"] = estado_servo2  # NUEVO
     return jsonify(salida)
+ 
 
 @app.route("/")
 def home():
@@ -123,7 +126,19 @@ def actualizar_servo():
     else:
         return jsonify({"status": "error", "mensaje": "Acción inválida"}), 400
 
-        
+
+@app.route("/actualizar-servo2", methods=["POST"])
+def actualizar_servo2():
+    global estado_servo2
+    data = request.get_json()
+    accion = data.get("accion")
+
+    if accion in ["abrir", "cerrar"]:
+        estado_servo2 = accion
+        return jsonify({"status": "ok", "accion": accion})
+    else:
+        return jsonify({"status": "error", "mensaje": "Acción inválida"}), 400
+            
 # === Iniciar hilo de fondo al arrancar la API ===
 if __name__ == "__main__":
     hilo = threading.Thread(target=verificador_programacion)
