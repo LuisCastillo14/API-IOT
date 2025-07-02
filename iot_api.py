@@ -4,6 +4,7 @@ import threading
 import time
 from flask_cors import CORS
 import logging
+import pytz
  
 
 app = Flask(__name__)
@@ -83,10 +84,12 @@ def home():
     return "API de control de LEDs (ESP32 + Temporizador + Programación)"
 
 def verificador_programacion():
-    while True:
-        ahora = datetime.now().strftime("%H:%M")
-        logging.info(f"[VERIFICACIÓN] Hora actual: {ahora}")
+    lima = pytz.timezone('America/Lima')
 
+    while True:
+        ahora = datetime.now(lima).strftime("%H:%M")
+        logging.info(f"[VERIFICACIÓN] Hora actual (Lima): {ahora}")
+        
         for led, info in horarios_programados.items():
             hora_prog = info["hora"]
             accion_prog = info["accion"]
@@ -99,10 +102,9 @@ def verificador_programacion():
                     logging.info(f"[AUTO] {led} → Acción '{accion_prog}' ejecutada automáticamente a las {hora_prog}")
                 else:
                     logging.info(f"[PENDIENTE] {led} aún no coincide con la hora actual.")
-
             else:
                 logging.info(f"[OMITIDO] {led} no tiene programación activa.")
-
+        
         logging.info("-" * 50)
         time.sleep(60)
         
