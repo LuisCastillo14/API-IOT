@@ -2,9 +2,16 @@ from flask import Flask, request, jsonify
 from datetime import datetime
 import threading
 import time
-from flask_cors import CORS 
+from flask_cors import CORS
+import logging
+ 
 
 app = Flask(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] [%(levelname)s] %(message)s',
+    datefmt='%H:%M:%S'
+)
 CORS(app)     
 
 # === Estados globales ===
@@ -78,26 +85,28 @@ def home():
 def verificador_programacion():
     while True:
         ahora = datetime.now().strftime("%H:%M")
-        print(f"[VERIFICACIÓN] Hora actual: {ahora}")
+        logging.info(f"[VERIFICACIÓN] Hora actual: {ahora}")
 
         for led, info in horarios_programados.items():
             hora_prog = info["hora"]
             accion_prog = info["accion"]
 
             if hora_prog:
-                print(f"[INFO] {led}: Hora programada = {hora_prog}, Acción = {accion_prog}")
+                logging.info(f"[INFO] {led}: Hora programada = {hora_prog}, Acción = {accion_prog}")
 
                 if hora_prog == ahora:
                     estado_leds[led] = accion_prog
-                    print(f"[AUTO] {led} → Acción '{accion_prog}' ejecutada automáticamente a las {hora_prog}")
+                    logging.info(f"[AUTO] {led} → Acción '{accion_prog}' ejecutada automáticamente a las {hora_prog}")
                 else:
-                    print(f"[PENDIENTE] {led} aún no coincide con la hora actual.")
+                    logging.info(f"[PENDIENTE] {led} aún no coincide con la hora actual.")
 
             else:
-                print(f"[OMITIDO] {led} no tiene programación activa.")
+                logging.info(f"[OMITIDO] {led} no tiene programación activa.")
 
-        print("-" * 50)
-        time.sleep(60)  # Esperar un minuto
+        logging.info("-" * 50)
+        time.sleep(60)
+        
+        
 # === Iniciar hilo de fondo al arrancar la API ===
 if __name__ == "__main__":
     hilo = threading.Thread(target=verificador_programacion)
