@@ -106,7 +106,7 @@ def verificador_programacion():
                 logging.info(f"[OMITIDO] {led} no tiene programación activa.")
         
         logging.info("-" * 50)
-        time.sleep(60)
+        time.sleep(30)
         
         
 # === Iniciar hilo de fondo al arrancar la API ===
