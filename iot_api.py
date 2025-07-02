@@ -78,12 +78,26 @@ def home():
 def verificador_programacion():
     while True:
         ahora = datetime.now().strftime("%H:%M")
-        for led, info in horarios_programados.items():
-            if info["hora"] == ahora:
-                estado_leds[led] = info["accion"]
-                print(f"[AUTO] {led} {info['accion']} automáticamente a las {info['hora']}")
-        time.sleep(60)
+        print(f"[VERIFICACIÓN] Hora actual: {ahora}")
 
+        for led, info in horarios_programados.items():
+            hora_prog = info["hora"]
+            accion_prog = info["accion"]
+
+            if hora_prog:
+                print(f"[INFO] {led}: Hora programada = {hora_prog}, Acción = {accion_prog}")
+
+                if hora_prog == ahora:
+                    estado_leds[led] = accion_prog
+                    print(f"[AUTO] {led} → Acción '{accion_prog}' ejecutada automáticamente a las {hora_prog}")
+                else:
+                    print(f"[PENDIENTE] {led} aún no coincide con la hora actual.")
+
+            else:
+                print(f"[OMITIDO] {led} no tiene programación activa.")
+
+        print("-" * 50)
+        time.sleep(60)  # Esperar un minuto
 # === Iniciar hilo de fondo al arrancar la API ===
 if __name__ == "__main__":
     hilo = threading.Thread(target=verificador_programacion)
