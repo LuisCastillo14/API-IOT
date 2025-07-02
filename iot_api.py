@@ -19,6 +19,7 @@ CORS(app)
 estado_leds = {f"led{i}": "apagar" for i in range(1, 7)}
 temporizadores = {f"led{i}": None for i in range(1, 7)}  # segundos
 horarios_programados = {f"led{i}": {"hora": None, "accion": None} for i in range(1, 7)}
+estado_servo = "cerrar"
 
 
 # === Endpoint para control inmediato ===
@@ -77,7 +78,9 @@ def obtener_comandos():
         prog = horarios_programados[led_id]
         salida[f"hora_programada_{led_id}"] = prog["hora"] if prog else None
         salida[f"accion_programada_{led_id}"] = prog["accion"] if prog else None
-    return jsonify(salida)
+
+        salida["servo"] = estado_servo
+        return jsonify(salida)
 
 @app.route("/")
 def home():
@@ -108,6 +111,18 @@ def verificador_programacion():
         logging.info("-" * 50)
         time.sleep(30)
         
+@app.route("/actualizar-servo", methods=["POST"])
+def actualizar_servo():
+    global estado_servo
+    data = request.get_json()
+    accion = data.get("accion")
+
+    if accion in ["abrir", "cerrar"]:
+        estado_servo = accion
+        return jsonify({"status": "ok", "accion": accion})
+    else:
+        return jsonify({"status": "error", "mensaje": "Acción inválida"}), 400
+
         
 # === Iniciar hilo de fondo al arrancar la API ===
 if __name__ == "__main__":
